@@ -1,3 +1,8 @@
+## 1.2.2 (Development)
+
+Features:
+  - Make bastion port configurable 
+
 ## 1.2.1 (Development)
 
 Features:

@@ -71,6 +71,8 @@ class Chef
           "-o", "ExitOnForwardFailure=yes",
           # Disable sharing of multiple connections
           "-o", "ControlPath=none",
+          # Bastion_port
+          "-p", "#{@bastion_port}",
           # SSH host to connect to
           "#{@bastion_user}@#{@bastion_host}",
           # Enforce tunnel timeout
