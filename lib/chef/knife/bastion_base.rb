@@ -9,7 +9,7 @@ class Chef
         @bastion_user    = Chef::Config[:knife][:bastion_user] || ENV['CHEF_USER'] || ENV['USER']
         @bastion_host    = Chef::Config[:knife][:bastion_host]
         @bastion_network = Chef::Config[:knife][:bastion_network]
-        @bastion_port    = Chef::Config[:knife][:bastion_port]
+        @bastion_port    = Chef::Config[:knife][:bastion_port] || 22
         @chef_host       = URI.parse(Chef::Config[:chef_server_url]).host
         @local_port      = Chef::Config[:knife][:bastion_local_port] || 4443
       end
