@@ -24,6 +24,6 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency 'chef'
   spec.add_runtime_dependency 'highline'
-  spec.add_runtime_dependency 'socksify'
+  spec.add_runtime_dependency 'socksify' "~> 1.7.2"
 
 end
