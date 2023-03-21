@@ -15,12 +15,9 @@ class Chef
         proxy_pid = tunnel_pid(@local_port)
         print_tunnel_info("Found an esablished tunnel:", pid: proxy_pid)
 
-        require 'socksify'
-        TCPSocket::socks_server = "127.0.0.1"
-        TCPSocket::socks_port   = @local_port
-
+        puts get_content_via_socks('localhost', @local_port, @chef_host, '/policies')
         # This line will raise an exception if tunnel is broken
-        rest.get_rest("/policies")
+        # rest.get_rest("/policies")
         ui.info ui.color("OK:  ", :green) + "The tunnel is up and running"
       end
     end
