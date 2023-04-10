@@ -1,5 +1,3 @@
-require_relative 'client_proxy'
-
 # Load socksify gem, required to make Chef work with SOCKS proxy
 begin
   require 'socksify/http'

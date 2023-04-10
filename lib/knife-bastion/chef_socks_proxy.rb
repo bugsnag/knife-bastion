@@ -1,67 +1,45 @@
 require_relative 'base_socks_proxy'
 require 'socksify/http'
 
-# Override `http_client` method in `Chef::HTTP` to return proxy object instead
+# Override `build_http_client` method in `Chef::HTTP` to return proxy object instead
 # of normal client object.
-Chef::HTTP.class_eval do
-  alias_method :http_client_without_bastion, :http_client
-  protected :http_client_without_bastion
+Chef::HTTP::BasicClient.class_eval do
+  alias_method :build_http_client_without_bastion, :build_http_client
+  protected :build_http_client_without_bastion
 
   protected
 
-  def http_client(*args)
-    client = http_client_without_bastion(*args)
-    options = {
-      local_port: ::Chef::Config[:knife][:bastion_local_port],
-      server_type: 'Chef',
-    }
-    KnifeBastion::ClientProxy.new(client, options)
-  end
-end
-
-
-# Monkey-patch `configure_http_request` to configure SOCKS proxy
-Chef::HTTP::HTTPRequest.class_eval do
-  alias_method :configure_http_request_without_socks_proxy, :configure_http_request
-  protected :configure_http_request_without_socks_proxy
-
-  protected
-
-  def configure_http_request(request_body = nil)
-    req_path = path.to_s.dup
-    req_path << "?#{query}" if query
-
+  def build_http_client
+    # Configure the socks_proxy with your SOCKS proxy settings
     proxy_host = '127.0.0.1'
-    proxy_port = @local_port
+    proxy_port = ::Chef::Config[:knife][:bastion_local_port]
+    chef_host = URI.parse(Chef::Config[:chef_server_url]).host
 
-    http = Net::HTTP.SOCKSProxy(proxy_host, proxy_port).new(url.host, url.port)
-
-    @http_request = case method.to_s.downcase
-                  when 'get'
-                    http.request(Net::HTTP::Get.new(req_path, headers))
-                  when 'post'
-                    http.request(Net::HTTP::Post.new(req_path, headers))
-                  when 'put'
-                    http.request(Net::HTTP::Put.new(req_path, headers))
-                  when 'patch'
-                    http.request(Net::HTTP::Patch.new(req_path, headers))
-                  when 'delete'
-                    http.request(Net::HTTP::Delete.new(req_path, headers))
-                  when 'head'
-                    http.request(Net::HTTP::Head.new(req_path, headers))
-                  else
-                    raise ArgumentError, "You must provide :GET, :PUT, :POST, :DELETE or :HEAD as the method"
-                  end
-
-    @http_request.body = request_body if request_body && @http_request.request_body_permitted?
-    # Optionally handle HTTP Basic Authentication
-    if url.user
-      user = CGI.unescape(url.user)
-      password = CGI.unescape(url.password) if url.password
-      @http_request.basic_auth(user, password)
+    # Note: the last nil in the new below forces Net::HTTP to ignore the
+    # no_proxy environment variable. This is a workaround for limitations
+    # in Net::HTTP use of the no_proxy environment variable. We internally
+    # match no_proxy with a fuzzy matcher, rather than letting Net::HTTP
+    # do it.
+    http_client = Net::HTTP.socks_proxy(proxy_host, proxy_port).new(chef_host, port, nil)
+    http_client.proxy_port = nil if http_client.proxy_address.nil?
+  
+    if url.scheme == 'https'
+      configure_ssl(http_client)
+    end
+  
+    opts = nethttp_opts.dup
+    opts["read_timeout"] ||= config[:rest_timeout]
+    opts["open_timeout"] ||= config[:rest_timeout]
+  
+    opts.each do |key, value|
+      http_client.send(:"#{key}=", value)
     end
 
-    # Overwrite default UA
-    @http_request[USER_AGENT] = self.class.user_agent
+    if keepalives
+      http_client.start
+    else
+      http_client
+    end
+    http_client
   end
 end
