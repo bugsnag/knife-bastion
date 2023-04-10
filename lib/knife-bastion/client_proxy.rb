@@ -34,7 +34,7 @@ module KnifeBastion
       @client = client
 
       @local_port = options[:local_port] || 4443
-
+      @chef_host = options[:chef_host]
       server_type = ::HighLine.color("#{options[:server_type]} ", [:bold, :cyan]) if options[:server_type]
       @network_errors_handler = options[:error_handler] || -> (e) {
         ::Kernel.puts
@@ -69,7 +69,7 @@ module KnifeBastion
       ::Kernel.puts "  Proxy host: #{proxy_host}"
       ::Kernel.puts "  Proxy port: #{proxy_port}"
     
-      proxy_http_client = ::Net::HTTP.socks_proxy(proxy_host, proxy_port).new(existing_http_client.url.host, existing_http_client.url.port)
+      proxy_http_client = ::Net::HTTP.socks_proxy(proxy_host, proxy_port).new(@chef_host, existing_http_client.url.port, nil)
       proxy_http_client.open_timeout = existing_http_client.instance_variable_get(:@nethttp_opts)[:open_timeout]
       proxy_http_client.read_timeout = existing_http_client.instance_variable_get(:@nethttp_opts)[:read_timeout]
       proxy_http_client

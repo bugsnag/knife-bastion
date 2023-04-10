@@ -1,5 +1,4 @@
 require 'chef/knife'
-require 'socksify/http'
 
 class Chef
   class Knife
@@ -64,22 +63,27 @@ class Chef
         proxy_pid = tunnel_pid(@local_port)
         print_tunnel_info("Found an esablished tunnel:", pid: proxy_pid)
 
-
-        
         # This line will raise an exception if tunnel is broken
-        puts get_content_via_socks('localhost', @local_port, @chef_host, '/policies')
-        ui.info ui.color("OK:  ", :green) + "The tunnel is up and running"
-      end
-
-      def get_content_via_socks(socks_server, socks_port, domain, path)
-        uri = URI("https://#{domain}#{path}")
-        Net::HTTP.socks_proxy(socks_server, socks_port).start(uri.host, uri.port, use_ssl: (uri.scheme == 'https')) do |http|
-          http.read_timeout = 500
-          puts "launching #{uri} on #{socks_server}:#{socks_port}"
-          http.get(uri, nil)
+        response = check_tunnel_status('/policies')            
+        if response.is_a?(Net::HTTPSuccess)
+          ui.info ui.color("OK:  ", :green) + "The tunnel is up and running"
+        else
+          raise "Error: Tunnel is broken"
         end
       end
 
+      def check_tunnel_status(path)
+        require 'socksify/http'
+
+        uri = URI.parse("https://#{@chef_host}#{path}")
+        resp = nil
+      
+        Net::HTTP.socks_proxy('127.0.0.1', @local_port).start(uri.host, uri.port, use_ssl: (uri.scheme == 'https')) do |http|
+          req = Net::HTTP::Get.new(uri.request_uri)
+          resp = http.request(req)
+        end
+        resp
+      end  
     end
   end
 end
