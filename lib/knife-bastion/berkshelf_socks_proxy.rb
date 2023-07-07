@@ -59,6 +59,14 @@ Chef::ServerAPI.class_eval do
   end
 end
 
+Chef::HTTP.class_eval do
+  alias_method :original_send_http_request, :send_http_request
+
+  def send_http_request(method, url, headers, data)
+    puts "\n~~~~send_http_request in Chef::HTTP called~~~~\n"
+    original_send_http_request(method, url, headers, data)
+  end
+end
 
 # Chef::HTTP.module_eval do
 
