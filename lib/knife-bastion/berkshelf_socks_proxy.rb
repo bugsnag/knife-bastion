@@ -19,23 +19,20 @@ Berkshelf.module_eval do
   end
 end
 
-Berkshelf::RidleyCompatAPI.module_eval do
-  alias_method :initialize_original, :initialize
+# Berkshelf::RidleyCompatAPI.module_eval do
+#   alias_method :initialize_original, :initialize
 
-  def initialize(**opts)
-    if opts[:proxy_host] && opts[:proxy_port]
-      proxy_host = opts[:proxy_host]
-      proxy_port = opts[:proxy_port]
-      puts "~~~~~Initializing RidleyCompatAPI with options: #{opts.inspect}"
-      http_client = Net::HTTP::SOCKSProxy(proxy_host, proxy_port)
-      http_client.proxy_port = nil if http_client.proxy_address.nil?
-      puts "~~~~~Added the http_client: #{http_client.inspect}"
-      super(http_client, **opts)
-    else
-      initialize_original(opts)
-    end
-  end
-end
+#   def initialize(**opts)
+#     if opts[:proxy_host] && opts[:proxy_port]
+#       proxy_host = opts[:proxy_host]
+#       proxy_port = opts[:proxy_port]
+#       puts "~~~~~Initializing RidleyCompatAPI with options: #{opts.inspect}"
+#       initialize_original(opts)
+#     else
+#       initialize_original(opts)
+#     end
+#   end
+# end
 
 Berkshelf::RidleyCompatAPI::ClassMethods.module_eval do
   def new_client(**opts)
