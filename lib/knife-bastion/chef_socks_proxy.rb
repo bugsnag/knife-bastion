@@ -40,7 +40,6 @@ Chef::HTTP::BasicClient.class_eval do
     else
       http_client
     end
-    ::Kernel.puts "~~~~basic_client called~~~~ proxy added ~~~~"
     http_client
   end
 end
