@@ -5,5 +5,6 @@ end
 
 # Activate socks proxy for Berkshelf
 if defined?(Berkshelf)
-  require_relative 'berkshelf_socks_proxy'
+  # require_relative 'berkshelf_socks_proxy'
+  require_relative 'chef_socks_proxy'
 end
