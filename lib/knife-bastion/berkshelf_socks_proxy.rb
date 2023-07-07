@@ -3,10 +3,6 @@ require_relative 'base_socks_proxy'
 # Override `ridley_connection` method in `Berkshelf` to enable Socks proxy
 # for the connection.
 Berkshelf.module_eval do
-  # class ChefConnectionError < StandardError; end
-  # class BerkshelfError < StandardError; end
-  # ridley_compat = RidleyCompat
-
   class << self
     alias_method :ridley_connection_without_bastion, :ridley_connection
 
@@ -24,15 +20,16 @@ Berkshelf::RidleyCompatAPI.module_eval do
   alias_method :initialize_original, :initialize
 
   def initialize(**opts)
-    proxy_host = opts.delete(:proxy_host)
-    proxy_port = opts.delete(:proxy_port)
-    puts "Initializing RidleyCompatAPI with options: #{opts.inspect}"
-    initialize_original(**opts)
-
-    if proxy_host && proxy_port
-      self.http_client = Chef::HTTP.new(self, builder: Chef::HTTP::Builder.new(self, middleware))
-      self.http_client.builder.adapter = Net::HTTP.SOCKSProxy(proxy_host, proxy_port)
-      puts "Added the http_client: #{http_client.inspect}"
+    if opts[:proxy_host] && opts[:proxy_port]
+      proxy_host = opts[:proxy_host]
+      proxy_port = opts[:proxy_port]
+      puts "~~~~~Initializing RidleyCompatAPI with options: #{opts.inspect}"
+      http_client = Net::HTTP::SOCKSProxy(proxy_host, proxy_port)
+      http_client.proxy_port = nil if http_client.proxy_address.nil?
+      puts "~~~~~Added the http_client: #{http_client.inspect}"
+      super(http_client, **opts)
+    else
+      initialize_original(opts)
     end
   end
 end
