@@ -10,6 +10,9 @@ Berkshelf.module_eval do
         options[:proxy_host] = '127.0.0.1'
         options[:proxy_port] = ::Chef::Config[:knife][:bastion_local_port]
         puts "ridley_connection called #{options.inspect}"
+        options[:proxy_host] = '127.0.0.1'
+        options[:proxy_port] = ::Chef::Config[:knife][:bastion_local_port]
+        puts "ridley_connection called #{options.inspect}"
 
         ridley_connection_without_bastion(options, &block)
     end
