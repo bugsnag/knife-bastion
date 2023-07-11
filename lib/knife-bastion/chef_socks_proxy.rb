@@ -20,9 +20,14 @@ Chef::HTTP::BasicClient.class_eval do
     # in Net::HTTP use of the no_proxy environment variable. We internally
     # match no_proxy with a fuzzy matcher, rather than letting Net::HTTP
     # do it.
-    http_client = Net::HTTP.socks_proxy(proxy_host, proxy_port).new(chef_host, port, nil)
-    http_client.proxy_port = nil if http_client.proxy_address.nil?
-  
+    if url.host == chef_host
+      http_client = Net::HTTP.socks_proxy(proxy_host, proxy_port).new(chef_host, port, nil)
+      http_client.proxy_port = nil if http_client.proxy_address.nil?
+    else
+      # If the request is not for the chef server, don't route it through the proxy
+      http_client = build_http_client_without_bastion
+    end
+
     if url.scheme == 'https'
       configure_ssl(http_client)
     end
