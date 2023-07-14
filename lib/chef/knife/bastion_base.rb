@@ -9,7 +9,7 @@ class Chef
         @bastion_user    = Chef::Config[:knife][:bastion_user] || ENV['CHEF_USER'] || ENV['USER']
         @bastion_host    = Chef::Config[:knife][:bastion_host]
         @bastion_network = Chef::Config[:knife][:bastion_network]
-        @bastion_port    = Chef::Config[:knife][:bastion_port]
+        @bastion_port    = Chef::Config[:knife][:bastion_port] || 22
         @chef_host       = URI.parse(Chef::Config[:chef_server_url]).host
         @local_port      = Chef::Config[:knife][:bastion_local_port] || 4443
       end
@@ -63,14 +63,27 @@ class Chef
         proxy_pid = tunnel_pid(@local_port)
         print_tunnel_info("Found an esablished tunnel:", pid: proxy_pid)
 
-        require 'socksify'
-        TCPSocket::socks_server = "127.0.0.1"
-        TCPSocket::socks_port = @local_port
-
         # This line will raise an exception if tunnel is broken
-        rest.get_rest("/policies")
-        ui.info ui.color("OK:  ", :green) + "The tunnel is up and running"
+        response = check_tunnel_status('/policies')            
+        if response.is_a?(Net::HTTPSuccess)
+          ui.info ui.color("OK:  ", :green) + "The tunnel is up and running"
+        else
+          raise "Error: Tunnel is broken"
+        end
       end
+
+      def check_tunnel_status(path)
+        require 'socksify/http'
+
+        uri = URI.parse("https://#{@chef_host}#{path}")
+        resp = nil
+      
+        Net::HTTP.socks_proxy('127.0.0.1', @local_port).start(uri.host, uri.port, use_ssl: (uri.scheme == 'https')) do |http|
+          req = Net::HTTP::Get.new(uri.request_uri)
+          resp = http.request(req)
+        end
+        resp
+      end  
     end
   end
 end

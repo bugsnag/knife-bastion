@@ -40,7 +40,7 @@ Configure your bastion server in `.chef/knife.rb` (at the bottom):
 # Bastion host SSH settings
 knife[:bastion_host] = "bastion.mycorp.net"
 knife[:bastion_user] = ENV["MYCORP_USER"] || ENV["CHEF_USER"] || ENV["USER"]
-knife[:port] = "22"
+knife[:bastion_port] = "22"
 
 # If you have multiple networks, that require different MFA tokens, specify
 # each network name here. (This configuration is referenced to clarify the
